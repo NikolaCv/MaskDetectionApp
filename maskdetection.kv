@@ -1,0 +1,63 @@
+<UI>:
+    orientation: 'vertical'
+    canvas:
+        Rectangle:
+            texture: self.camera_display.texture
+            size: self.camera_display_size[0], self.camera_display_size[1]
+            pos: self.camera_display_pos[0], self.camera_display_pos[1]
+
+    FloatLayout:
+        BoxLayout: # switch mode
+            orientation: 'vertical'
+            size_hint: 0.1, 60 / root.screen_size[1]
+            pos_hint: {"x": 0.8, "y": 20 / root.screen_size[1] }
+            Label:
+                text: 'Continuous mode'
+            Switch:
+                id: root.continous_mode
+                on_active: root.switch_callback()
+
+        Button: # capture
+            size_hint: root.capture_button_size/root.width, root.capture_button_size/root.height
+            pos_hint: {"x": 0.45, "y": 20 / root.screen_size[1]}
+            background_color: 0, 0, 0, 0
+            on_release: root.capture_click()
+            Image:
+                source: root.capture_button_source
+                size: self.parent.size
+                center_x: self.parent.center_x
+                center_y: self.parent.center_y
+
+        Button: # switch cam
+            size_hint: root.capture_button_size/root.width*0.75, root.capture_button_size/root.height*0.75
+            pos_hint: {"x":0.125, "y": 20 / root.screen_size[1]}
+            background_color: 0, 0, 0, 0
+            on_press: root.switch_cam()
+            Image:
+                source: root.switch_cam_source
+                size: self.parent.size
+                center_x: self.parent.center_x
+                center_y: self.parent.center_y
+
+        BoxLayout: # indicator
+            canvas:
+                Color:
+                    rgb: root.verify_colors[3]
+                Rectangle:
+                    size: 0.05 * root.width, 0.1 * root.width
+                    pos: 0, root.center_y - 0.2 * root.width
+                Color:
+                    rgb: root.verify_colors[2]
+                Rectangle:
+                    size: 0.05 * root.width, 0.1 * root.width
+                    pos: 0, root.center_y - 0.1 * root.width
+                Color:
+                    rgb: root.verify_colors[1]
+                Rectangle:
+                    size: 0.05 * root.width, 0.1*root.width
+                    pos: 0, root.center_y
+                Color:
+                    rgb: root.verify_colors[0]
+                Rectangle:
+                    size: 0.05 * root.width, 0.1 * root.width
+                    pos: 0, root.center_y + 0.1 * root.width
