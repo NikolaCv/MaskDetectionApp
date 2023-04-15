@@ -1,12 +1,11 @@
 from kivy.app import App
 from kivy.properties import (
-    NumericProperty, ListProperty, StringProperty, BooleanProperty, DictProperty
+    NumericProperty, ListProperty, StringProperty, DictProperty
 )
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.image import Image
-from kivy.uix.widget import Widget
 from kivy.uix.switch import Switch
 from kivy.graphics.texture import Texture
 import cv2
@@ -16,10 +15,12 @@ from math import floor, ceil
 
 
 class UI(BoxLayout):
+    # initialize propreties that are used for UI
     frames_per_second = NumericProperty(60.0)
 
     screen_ratio = NumericProperty(Window.size[0] / Window.size[1])
     capture_button_size = NumericProperty(min(Window.size) * 0.2)
+
     capture_button_source = StringProperty('camera_button_white.png')
     switch_cam_source = StringProperty('refresh.png')
 
@@ -38,23 +39,26 @@ class UI(BoxLayout):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        # initialize states
         self.cam_index = 0
         self.max_cam_index = 10
         self.capture = cv2.VideoCapture(self.cam_index)
         if self.capture is None:
             self.switch_cam()
 
+        # initialize states and load model
         self.picture = 0
         self.clicked = False
         self.nn_model = keras.models.load_model('nn_model')
         self.verify(np.zeros((300, 300, 3)))
 
-        self.prediction = []
-        self.predictions = []
+        # initialize states
+        self.prediction = []  # current prediction
+        self.predictions = []  # list of last N predictions
         self.N = 10
         self.My_Clock = Clock
         self.My_Clock.schedule_interval(self.update, 1 / self.frames_per_second)
-
 
     def update(self, *args):
         # get window size and set capture_button_size
@@ -70,7 +74,7 @@ class UI(BoxLayout):
             new_height = self.height - self.capture_button_size - 30
             new_width = new_height * self.camera_size[1] / self.camera_size[0]
             self.camera_display_size = [new_width, new_height]
-            self.camera_display_pos = [(Window.size[0] - new_width)/2, self.capture_button_size + 30]
+            self.camera_display_pos = [(Window.size[0] - new_width) / 2, self.capture_button_size + 30]
 
         # if photo is taken don't get new pic
         if not self.clicked or self.continuous_mode.active:
@@ -98,8 +102,10 @@ class UI(BoxLayout):
         self.camera_display.texture = texture
 
     def capture_click(self):
+        # toggle clicked state
         self.clicked = not self.clicked
 
+        # update UI accordingly and verify if single mode is active
         if self.clicked:
             if self.continuous_mode.active:
                 self.capture_button_source = 'camera_button_red.png'
@@ -115,6 +121,7 @@ class UI(BoxLayout):
 
     def switch_callback(self):
         # continuous_mode needs to be changed manualy, switch doesn't do it auto
+        # reset states after switching mode
         self.continuous_mode.active = not self.continuous_mode.active
         self.capture_button_source = 'camera_button_white.png'
         self.clicked = False
@@ -124,16 +131,20 @@ class UI(BoxLayout):
 
     def verify(self, img):
         img = self.resize_image(img, 300)
-        prediction = self.nn_model.predict(img, batch_size=None, verbose=0, steps=None,callbacks=None,
+        prediction = self.nn_model.predict(img, batch_size=None, verbose=0, steps=None, callbacks=None,
                                            workers=8, use_multiprocessing=True).round(0)
 
         if self.continuous_mode.active:
+            # in continuous mode append prediction to the list
             self.predictions.append(prediction[0])
             if len(self.predictions) > self.N:
                 del self.predictions[0]
+
+            # make a final prediction that averages last N predictions
             self.prediction = list(np.sum(self.predictions, axis=0))
             one_hot = self.prediction.index(np.max(self.prediction))
             self.prediction = np.eye(4)[one_hot]
+
         else:
             self.prediction = prediction[0]
 
@@ -141,6 +152,7 @@ class UI(BoxLayout):
         height = np.size(img, axis=0)
         width = np.size(img, axis=1)
 
+        # resize image, filling shorter dimesion with black pixesl to squared image
         if height > width:
             new_width = floor(new_size * width / height)
             img = cv2.resize(img, dsize=(new_width, new_size), interpolation=cv2.INTER_CUBIC)
